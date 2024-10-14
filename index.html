@@ -1,24 +1,38 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Генератор кода</title>
+    <title>Code Generator</title>
+    <style>
+        #generateBtn {
+            background-color: green; /* Зеленый фон */
+            color: white; /* Белый текст */
+            border: none; /* Без рамки */
+            padding: 10px 20px; /* Отступы */
+            cursor: pointer; /* Указатель мыши */
+            font-size: 16px; /* Размер шрифта */
+        }
+
+        #generateBtn:hover {
+            background-color: darkgreen; /* Темно-зеленый при наведении */
+        }
+    </style>
 </head>
 <body>
-    <h1>Генератор кода</h1>
+    <h1>Code Generator</h1>
     
-    <label for="incCount">Введите количество параметров Inc:</label>
+    <label for="incCount">Enter the number of Inc parameters:</label>
     <input type="number" id="incCount" min="0" value="0"><br><br>
 
-    <label for="excCount">Введите количество параметров Exc:</label>
+    <label for="excCount">Enter the number of Exc parameters:</label>
     <input type="number" id="excCount" min="0" value="0"><br><br>
 
-    <button id="generateBtn">Сгенерировать код</button>
-    <button id="copyBtn">Копировать код</button>
-    <button id="saveBtn">Сохранить код</button>
+    <button id="generateBtn">Generate Code</button>
+    <button id="copyBtn">Copy Code</button>
+    <button id="saveBtn">Save Code</button>
 
-    <h2>Сгенерированный код:</h2>
+    <h2>Generated Code:</h2>
     <pre id="output"></pre>
 
     <script>
@@ -121,7 +135,7 @@ internal readonly struct #CONDITION# : EntLongQueryExtensions.IIncExc
             const blob = new Blob([outputText], { type: 'text/plain' });
             const link = document.createElement('a');
             link.href = window.URL.createObjectURL(blob);
-            link.download = 'generated_code.txt';
+            link.download = 'EntLongQueryExtensions.cs'; // Название файла
             link.click();
             window.URL.revokeObjectURL(link.href); // Освобождаем объект URL
         });
