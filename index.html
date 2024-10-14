@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор кода</title>
+</head>
+<body>
+    <h1>Генератор кода</h1>
+    
+    <label for="incCount">Введите количество параметров Inc:</label>
+    <input type="number" id="incCount" min="0" value="0"><br><br>
+
+    <label for="excCount">Введите количество параметров Exc:</label>
+    <input type="number" id="excCount" min="0" value="0"><br><br>
+
+    <button id="generateBtn">Сгенерировать код</button>
+    <button id="copyBtn">Копировать код</button>
+    <button id="saveBtn">Сохранить код</button>
+
+    <h2>Сгенерированный код:</h2>
+    <pre id="output"></pre>
+
+    <script>
+        const template = `namespace DCFApixels.DragonECS
+{
+    using System;
+    using System.Runtime.CompilerServices;
+    #if ENABLE_IL2CPP
+    using Unity.IL2CPP.CompilerServices;
+    [Il2CppSetOption(Option.NullChecks, false)]
+    [Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+    #endif
+    internal static class EntLongQueryExtensions
+    {
+        #region Tuple syntax
+        public static EcsLongsSpan.Enumerator GetEnumerator<TM>(this (EcsDefaultWorld, TM) v)
+        where TM : IIncExc
+        {
+            return v.Item1.Where(v.Item2.Mask).Longs.GetEnumerator();
+        }
+        public static EcsLongsSpan.Enumerator GetEnumerator<TM>(this (EcsDefaultWorld, TM) v, Comparison<int> comparison)
+            where TM : IIncExc
+        {
+            return v.Item1.Where(v.Item2.Mask, comparison).Longs.GetEnumerator();
+        }
+        #endregion
+
+        #region Where
+        public static EcsSpan Where<TCollection, TM>(this TCollection entities, TM mask)
+            where TCollection : IEntityStorage
+            where TM : IIncExc
+        {
+            return entities.Where(mask.Mask);
+        }
+        public static EcsSpan Where<TM>(this EcsReadonlyGroup group, TM mask)
+            where TM : IIncExc
+        {
+            return group.Where(mask.Mask);
+        }
+        public static EcsSpan Where<TM>(this EcsSpan span, TM mask)
+            where TM : IIncExc
+        {
+            return span.Where(mask.Mask);
+        }
+        #endregion
+
+        #region Where with sort
+        public static EcsSpan Where<TCollection, TM>(this TCollection entities, TM mask, Comparison<int> comparison)
+            where TCollection : IEntityStorage
+            where TM : IIncExc
+        {
+            return entities.Where(mask.Mask);
+        }
+        public static EcsSpan Where<TM>(this EcsReadonlyGroup group, TM mask, Comparison<int> comparison)
+            where TM : IIncExc
+        {
+            return group.Where(mask.Mask);
+        }
+        public static EcsSpan Where<TM>(this EcsSpan span, TM mask, Comparison<int> comparison)
+            where TM : IIncExc
+        {
+            return span.Where(mask.Mask);
+        }
+        #endregion
+
+        public interface IIncExc
+        {
+            public EcsStaticMask Mask { get; }
+        }
+    }
+
+#INC_EXC_CONDITIONS#
+}`;
+        
+        const conditionTemplate = `#if ENABLE_IL2CPP
+[Il2CppSetOption(Option.NullChecks, false)]
+[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
+#endif
+internal readonly struct #CONDITION# : EntLongQueryExtensions.IIncExc
+{
+    public static readonly #CONDITION# m = default;
+    public static readonly EcsStaticMask Mask = EcsStaticMask#CONDITION_BUILD#.Build();
+    EcsStaticMask EntLongQueryExtensions.IIncExc.Mask { [MethodImpl(MethodImplOptions.AggressiveInlining)] get { return Mask; } }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static implicit operator EcsStaticMask(#CONDITION# v) { return Mask; }
+#SUB_CONDITION#
+}`;
+
+
+        document.getElementById('copyBtn').addEventListener('click', function() {
+            const outputText = document.getElementById('output').textContent;
+            navigator.clipboard.writeText(outputText).then(() => {
+                alert("Код скопирован в буфер обмена!");
+            }).catch(err => {
+                console.error('Ошибка при копировании: ', err);
+            });
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', function() {
+            const outputText = document.getElementById('output').textContent;
+            const blob = new Blob([outputText], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = 'generated_code.txt';
+            link.click();
+            window.URL.revokeObjectURL(link.href); // Освобождаем объект URL
+        });
+
+        document.getElementById('generateBtn').addEventListener('click', function() {
+            const incCount = parseInt(document.getElementById('incCount').value);
+            const excCount = parseInt(document.getElementById('excCount').value);
+
+            const data = [
+                { name: 'Inc', count: incCount },
+                { name: 'Exc', count: excCount }
+            ];
+
+            const conditions = generateConditions(data, 0, conditionTemplate, "", "    ");
+            const finalCode = template.replace("#INC_EXC_CONDITIONS#", conditions);
+            
+            document.getElementById('output').textContent = finalCode;
+        });
+
+        function generateConditions(datas, index, conditionTemplate, preBuildString, spacing) {
+            const data = datas[index];
+            let conditionsBuilder = '';
+
+            for (let i = 0; i < data.count; i++) {
+                let condition = conditionTemplate;
+
+                condition = condition.replace(/#CONDITION#/g, `${data.name}<${getGenericParameters(i, data.name).join(", ")}>`);
+
+                const subPreBuildString = preBuildString + getBuilderParameters(i, data.name).join("");
+                condition = condition.replace("#CONDITION_BUILD#", subPreBuildString);
+
+                if (datas.length - 1 > index) {
+                    condition = condition.replace("#SUB_CONDITION#", generateConditions(datas, index + 1, conditionTemplate, subPreBuildString, spacing));
+                } else {
+                    condition = condition.replace("#SUB_CONDITION#", '');
+                }
+
+                condition = spacing + condition.split('\n').join('\n' + spacing);
+                conditionsBuilder += condition + '\n';
+            }
+            return conditionsBuilder;
+        }
+
+        function getGenericParameters(count, name) {
+            name = name.toUpperCase();
+            const parameters = [];
+            for (let i = 0; i <= count; i++) {
+                parameters.push(`${name}${i}`);
+            }
+            return parameters;
+        }
+
+        function getBuilderParameters(count, name) {
+            const upperName = name.toUpperCase();
+            const parameters = [];
+            for (let i = 0; i <= count; i++) {
+                parameters.push(`.${name}<${upperName}${i}>()`);
+            }
+            return parameters;
+        }
+    </script>
+</body>
+</html>
