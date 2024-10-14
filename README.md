@@ -1,1 +1,1 @@
-Mask generator for cases when there are not enough generic parameters for Inc or Exc. The generated code can simply replace the file EntLongQueryExtensions.cs.
+[[OPEN]](https://dcfapixels.github.io/DragonECS-Mask_Generator_Online/) Mask generator for cases when there are not enough generic parameters for Inc or Exc. The generated code can simply replace the file EntLongQueryExtensions.cs.
